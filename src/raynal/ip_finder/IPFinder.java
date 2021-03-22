@@ -8,13 +8,17 @@ import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
@@ -29,10 +33,12 @@ public class IPFinder extends JFrame implements ActionListener{
 	JLabel labelFindHostName, labelFindAddress;
 	
 	JTextField inputName;
-	JButton myIp, findIp;
+	JButton myIp, findIp, additionalDetails;
+	JTextArea sourceCodeArea;
+	JScrollPane scrollPane;
 	
 	InetAddress localIp;
-	URL url;
+	URL publicIpUrl, inputUrl;
 	String myPublicIp;
 	
 	
@@ -46,8 +52,8 @@ public class IPFinder extends JFrame implements ActionListener{
 		try {
 			localIp = InetAddress.getLocalHost();
 			
-			url = new URL("http://bot.whatismyipaddress.com");
-			BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
+			publicIpUrl = new URL("http://bot.whatismyipaddress.com");
+			BufferedReader br = new BufferedReader(new InputStreamReader(publicIpUrl.openStream()));
 			
 			myPublicIp = br.readLine().trim();
 			
@@ -62,7 +68,7 @@ public class IPFinder extends JFrame implements ActionListener{
 		setTitle("IP Finder");
 		setLayout(null);
 		setVisible(true);
-		setSize(310, 320);
+		setSize(300, 320);
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
@@ -100,27 +106,42 @@ public class IPFinder extends JFrame implements ActionListener{
 		add(myIp);
 		
 		inputName = new JTextField(10);
-		inputName.setBounds(100, 150, 160, 25);
+		inputName.setBounds(112, 150, 160, 25);
 		inputName.setHorizontalAlignment(SwingConstants.RIGHT);
 		inputName.setToolTipText("Enter URL");
 		add(inputName);
 		
 		findIp = new JButton("Find IP");
-		findIp.setBounds(135, 180, 90, 25);
+		findIp.setBounds(145, 180, 90, 25);
 		findIp.addActionListener(this);
 		add(findIp);
 		
 		labelFindHostName = new JLabel();
 		labelFindHostName.setFont(new Font("Serif", Font.PLAIN, 14));
 		labelFindHostName.setHorizontalAlignment(SwingConstants.LEFT);
-		labelFindHostName.setBounds(85, 210, 250, 30);
+		labelFindHostName.setBounds(105, 210, 250, 30);
 		add(labelFindHostName);
 		
 		labelFindAddress = new JLabel();
 		labelFindAddress.setFont(new Font("Serif", Font.PLAIN, 14));
 		labelFindAddress.setHorizontalAlignment(SwingConstants.LEFT);
-		labelFindAddress.setBounds(85, 230, 180, 30);
+		labelFindAddress.setBounds(105, 230, 180, 30);
 		add(labelFindAddress);
+		
+		additionalDetails = new JButton("Additional Details");
+		additionalDetails.setBounds(105, 258, 115, 20);
+		additionalDetails.setHorizontalAlignment(SwingConstants.LEFT);
+		additionalDetails.addActionListener(this);
+		additionalDetails.setVisible(false);
+		add(additionalDetails);
+		
+		
+		sourceCodeArea = new JTextArea();
+		scrollPane = new JScrollPane(sourceCodeArea);
+		scrollPane.setBounds(290, 5, 290, 270);
+		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		add(scrollPane);
 	}
 	
 	
@@ -134,19 +155,69 @@ public class IPFinder extends JFrame implements ActionListener{
 		if(e.getSource() == myIp) {
 			labelLocalHostName.setText(labelLocalHostName.getText() + " " + localIp.getHostName());
 			labelLocalPrivate.setText(labelLocalPrivate.getText() + " " + localIp.getHostAddress());
+//			labelLocalPrivate.setText(labelLocalPrivate.getText() + " 192.168.1.104");
 			labelLocalPublic.setText(labelLocalPublic.getText() + " " + myPublicIp);
+//			labelLocalPublic.setText(labelLocalPublic.getText() + " 202.186.87.96");
 			myIp.setEnabled(false);
 		}
 		
 		if(e.getSource() == findIp) {
-			String text = inputName.getText();
-			try {
-				InetAddress iadd = InetAddress.getByName(text);
-				labelFindHostName.setText("Host Name:  " + iadd.getHostName());
-				labelFindAddress.setText("Address:  " + iadd.getHostAddress());
+			
+			if(!inputName.getText().isEmpty()) {
+				try {
+					try {
+						inputUrl = new URL(inputName.getText());
+					}
+					catch(MalformedURLException ex) {
+						inputUrl = new URL("http://" + inputName.getText());
+					}
+					
+					InetAddress iadd = InetAddress.getByName(inputUrl.getHost());
+					labelFindHostName.setText("Host Name:  " + iadd.getHostName());
+					labelFindAddress.setText("Address:  " + iadd.getHostAddress());
+				}
+				catch(IOException ex) {
+					ex.printStackTrace();
+				}
+				
+				additionalDetails.setVisible(true);
 			}
-			catch(IOException ex) {
-				ex.printStackTrace();
+		}
+		
+		if(e.getSource() == additionalDetails) {
+			setSize(600, 320);
+			int i;
+			StringBuilder sb = new StringBuilder();
+			
+			sourceCodeArea.setText("Protocol: " + inputUrl.getProtocol() + "\nHost Name: " + inputUrl.getHost() + 
+									"\nPort Number: " + inputUrl.getPort() + "\nDefault Port Number: " + inputUrl.getDefaultPort() + 
+									"\nQuery: " + inputUrl.getQuery() + "\nPath: " + inputUrl.getPath() + "\nFile: " + inputUrl.getFile() + "\n\nSource Code: \n");
+			
+			if(inputName.getText().isEmpty()) {
+				sourceCodeArea.setText(sourceCodeArea.getText() + "Please enter a webpage URL!");
+			}
+			else {
+				try {
+					HttpURLConnection httpCon = (HttpURLConnection) inputUrl.openConnection(); 
+					httpCon.addRequestProperty("User-Agent", "Chrome/89.0.4389.90"); 
+					
+					BufferedReader reader = new BufferedReader(new InputStreamReader(httpCon.getInputStream()));
+					
+					while((i = reader.read()) != -1) {
+						
+//						sourceCodeArea.setText(sourceCodeArea.getText() + (char) i);
+						sb.append((char)i);
+					}
+					
+					String sourceText = sb.toString();
+					sourceCodeArea.setText(sourceCodeArea.getText() + sourceText);
+				}
+				catch (MalformedURLException ex) {
+					ex.printStackTrace();
+				}
+				catch(IOException ex) {
+					ex.printStackTrace();
+				}
 			}
 		}
 	}
