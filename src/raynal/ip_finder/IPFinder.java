@@ -50,12 +50,12 @@ public class IPFinder extends JFrame implements ActionListener{
         catch (UnsupportedLookAndFeelException e) {}        //Refines the look of the ui
 		
 		try {
-			localIp = InetAddress.getLocalHost();
+			localIp = InetAddress.getLocalHost();			//address of local host 
 			
-			publicIpUrl = new URL("http://bot.whatismyipaddress.com");
-			BufferedReader br = new BufferedReader(new InputStreamReader(publicIpUrl.openStream()));
+			publicIpUrl = new URL("http://bot.whatismyipaddress.com");			//this website displays the system' public IP address
+			BufferedReader br = new BufferedReader(new InputStreamReader(publicIpUrl.openStream()));			//to read the url	
 			
-			myPublicIp = br.readLine().trim();
+			myPublicIp = br.readLine().trim();					//gets the first line of the url
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -153,28 +153,29 @@ public class IPFinder extends JFrame implements ActionListener{
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == myIp) {
-			labelLocalHostName.setText(labelLocalHostName.getText() + " " + localIp.getHostName());
-			labelLocalPrivate.setText(labelLocalPrivate.getText() + " " + localIp.getHostAddress());
+			labelLocalHostName.setText(labelLocalHostName.getText() + " " + localIp.getHostName());		 	//display system host name
+			labelLocalPrivate.setText(labelLocalPrivate.getText() + " " + localIp.getHostAddress());		//display system private IP address
 //			labelLocalPrivate.setText(labelLocalPrivate.getText() + " 192.168.1.104");
-			labelLocalPublic.setText(labelLocalPublic.getText() + " " + myPublicIp);
+			labelLocalPublic.setText(labelLocalPublic.getText() + " " + myPublicIp);						//display system public IP address
 //			labelLocalPublic.setText(labelLocalPublic.getText() + " 202.186.87.96");
 			myIp.setEnabled(false);
 		}
 		
 		if(e.getSource() == findIp) {
 			
-			if(!inputName.getText().isEmpty()) {
+			if(!inputName.getText().isEmpty()) {							//having empty field returns a runtime error when fetching the url
 				try {
 					try {
-						inputUrl = new URL(inputName.getText());
+						inputUrl = new URL(inputName.getText());			
 					}
 					catch(MalformedURLException ex) {
-						inputUrl = new URL("http://" + inputName.getText());
+						//if the user enters only the host name eg: www.google.com, url gives error, so when catching the error, we prefix a protocol to the host name
+						inputUrl = new URL("http://" + inputName.getText());		
 					}
 					
 					InetAddress iadd = InetAddress.getByName(inputUrl.getHost());
-					labelFindHostName.setText("Host Name:  " + iadd.getHostName());
-					labelFindAddress.setText("Address:  " + iadd.getHostAddress());
+					labelFindHostName.setText("Host Name:  " + iadd.getHostName());				//displays host name of the entered url
+					labelFindAddress.setText("Address:  " + iadd.getHostAddress());				//displays IP address of the entered url
 				}
 				catch(IOException ex) {
 					ex.printStackTrace();
@@ -185,10 +186,11 @@ public class IPFinder extends JFrame implements ActionListener{
 		}
 		
 		if(e.getSource() == additionalDetails) {
-			setSize(600, 320);
+			setSize(600, 320);				//window size is increased, hence displaying the text area
 			int i;
 			StringBuilder sb = new StringBuilder();
 			
+			//displaying information of the entered url
 			sourceCodeArea.setText("Protocol: " + inputUrl.getProtocol() + "\nHost Name: " + inputUrl.getHost() + 
 									"\nPort Number: " + inputUrl.getPort() + "\nDefault Port Number: " + inputUrl.getDefaultPort() + 
 									"\nQuery: " + inputUrl.getQuery() + "\nPath: " + inputUrl.getPath() + "\nFile: " + inputUrl.getFile() + "\n\nSource Code: \n");
@@ -198,6 +200,13 @@ public class IPFinder extends JFrame implements ActionListener{
 			}
 			else {
 				try {
+					/*
+					 * The request property is required because while fetching source code of a url, or it might throw an error
+					 * java.io.IOException: Server returned HTTP response code: 403 for URL
+					 * 
+					 * This implies the Server doesn't have permission to display the source code
+					 * The addRequestProperty Key-value pair, give access to the requested web page.
+					 */
 					HttpURLConnection httpCon = (HttpURLConnection) inputUrl.openConnection(); 
 					httpCon.addRequestProperty("User-Agent", "Chrome/89.0.4389.90"); 
 					
