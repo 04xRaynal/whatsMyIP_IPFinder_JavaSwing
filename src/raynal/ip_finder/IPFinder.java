@@ -1,3 +1,10 @@
+/*
+ * GUI Application which displays System Private and Public IP Address
+ * Also acts as an IP finder for any entered URL
+ * Displays the information and source code of the entered URL
+ * @author 04xRaynal
+ */
+
 package raynal.ip_finder;
 
 import java.awt.Font;
